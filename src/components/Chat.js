@@ -1,16 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Paper, Typography, Box, TextField, Button, Grid } from "@mui/material";
 
 const ChatArea = () => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [emailContent, setEmailContent] = useState(
-    "This is a short email summary.\nLorem Ipsum is simply dummy text of the printing and typesetting industry."
-  );
-  const [emailEdit, setEmailEdit] = useState(
-    "This is a short email summary.\nLorem Ipsum is simply dummy text of the printing and typesetting industry."
-  );
+  const [socket, setSocket] = useState(null); // WebSocket connection state
+
+  useEffect(() => {
+    // Establish WebSocket connection when the component mounts
+    const ws = new WebSocket("ws://your-websocket-url"); // Replace with your WebSocket URL
+
+    // Set up WebSocket event handlers
+    ws.onopen = () => {
+      console.log("WebSocket connection established");
+      setSocket(ws);
+    };
+
+    // Receive message from WebSocket and treat it as a user message
+    ws.onmessage = (event) => {
+      const receivedMessage = event.data;
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { sender: "user", text: receivedMessage }, // Treat this as a user message
+      ]);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error: ", error);
+    };
+
+    // Clean up the WebSocket connection when the component unmounts
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   const handleSend = () => {
     if (!userInput) return;
@@ -20,15 +47,15 @@ const ChatArea = () => {
 
     // Simulate AI response after a delay
     const aiResponse =
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.\n Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.\n It has survived not only five centuries, but also the leap into electronic typesetting,\n remaining essentially unchanged";
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.\n Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.";
     setTimeout(() => {
       setMessages((prevMessages) => [
         ...prevMessages,
-        { sender: "ai", text: aiResponse },
+        { sender: "ai", text: aiResponse }, // AI-generated response
       ]);
     }, 1000);
 
-    setUserInput("");
+    setUserInput(""); // Clear input
   };
 
   const handleKeyDown = (e) => {
@@ -37,25 +64,6 @@ const ChatArea = () => {
       e.preventDefault(); // Prevent the default behavior of adding a newline
       handleSend();
     }
-  };
-
-  const handleEdit = () => {
-    setEditing(true);
-    setEmailEdit(emailContent);
-  };
-
-  const handleSave = () => {
-    setEditing(false);
-    setEmailContent(emailEdit);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-  };
-
-  const handleRegenerate = () => {
-    // Implement regeneration logic here
-    setEmailContent("Regenerated email content.");
   };
 
   return (
@@ -94,142 +102,13 @@ const ChatArea = () => {
                     msg.sender === "user" ? "#FFD369" : "#f1f1f1",
                   color: msg.sender === "user" ? "#222831" : "#000",
                   marginLeft: "10px", // Margin on left
-              marginRight: "10px",
+                  marginRight: "10px",
                 }}
               >
                 {msg.text}
               </Typography>
             </Box>
           ))}
-          <Paper
-            elevation={3}
-            sx={{
-              padding: "15px",
-              backgroundColor: "#F9F9F9",
-              borderRadius: "10px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              marginTop: "20px",
-              position: "relative",
-              marginLeft: "10px", // Margin on left
-              marginRight: "10px", // Margin on right
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Suggested Email
-            </Typography>
-            {editing ? (
-              <>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  variant="outlined"
-                  value={emailEdit}
-                  onChange={(e) => setEmailEdit(e.target.value)}
-                  sx={{ marginBottom: "10px" }}
-                />
-                <Box sx={{ display: "flex", gap: "10px" }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSave}
-                    color="primary"
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={handleCancel}
-                    color="secondary"
-                  >
-                    Cancel
-                  </Button>
-                </Box>
-              </>
-            ) : (
-              <>
-                <Typography sx={{ marginBottom: "10px" }}>
-                  {emailContent}
-                </Typography>
-                <Button
-                  variant="text"
-                  onClick={() => alert("See more functionality")}
-                >
-                  See More
-                </Button>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "10px",
-                    fontSize: "12px",
-                    color: "#4CAF50", // Green font color
-                  }}
-                >
-                  <Button
-                    variant="text"
-                    onClick={handleRegenerate}
-                    sx={{
-                      background: "none",
-                      color: "#4CAF50", // Green font color
-                      border: "none",
-                      textTransform: "none",
-                      padding: 0,
-                    }}
-                  >
-                    Regenerate Response
-                  </Button>
-                  <Typography
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      marginX: "5px",
-                      fontSize: "12px",
-                      color: "#4CAF50", // Green font color
-                    }}
-                  >
-                    |
-                  </Typography>
-                  <Button
-                    variant="text"
-                    onClick={handleEdit}
-                    sx={{
-                      background: "none",
-                      color: "#4CAF50", // Green font color
-                      border: "none",
-                      textTransform: "none",
-                      padding: 0,
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Typography
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      marginX: "5px",
-                      fontSize: "12px",
-                      color: "#4CAF50", // Green font color
-                    }}
-                  >
-                    |
-                  </Typography>
-                  <Button
-                    variant="text"
-                    onClick={() => alert("Send Email functionality")}
-                    sx={{
-                      background: "none",
-                      textTransform: "none",
-                      color: "#4CAF50", // Green font color
-                      border: "none",
-                      padding: 0,
-                    }}
-                  >
-                    Send the Email
-                  </Button>
-                </Box>
-              </>
-            )}
-          </Paper>
         </Paper>
 
         {/* Chat Input */}
